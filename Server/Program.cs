@@ -1,6 +1,7 @@
 ﻿
 
 using Server;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -13,7 +14,7 @@ var Command = new Command();
 
 
 
-TcpListener tcpListener = new TcpListener(IPAddress.Parse("10.1.18.9"), 27001);
+TcpListener tcpListener = new TcpListener(IPAddress.Parse("192.168.79.1"), 2701);
 tcpListener.Start();
 
 // Buffer for reading data
@@ -49,11 +50,27 @@ async Task AcceptClientAsync()
                     byte[] msg = System.Text.Encoding.ASCII.GetBytes(jsonString);
 
                     stream.Write(msg, 0, msg.Length);
-                    Console.WriteLine("Sent: {0}", jsonString);
+                    
                
                 
                }
+               if(Command?.Type=="Kill" && Command?.Context is not null)
+               {
+                    Process.GetProcessById(Command.ProcessId).Kill();
+					Console.WriteLine($"Process {Command?.Context} Kill!");
 
+				}
+               if( Command?.Type=="Start" && Command?.Context is not null)
+               {
+                    var process= Process.Start(Command.Context);
+                    var newProcess=new MyProcess() { Name=process.ProcessName,Id=process.Id,Machine=process.MachineName};
+					string jsonString = JsonSerializer.Serialize(newProcess);
+					byte[] msg = System.Text.Encoding.ASCII.GetBytes(jsonString);
+
+					stream.Write(msg, 0, msg.Length);
+					Console.WriteLine($"Process {Command?.Context} Run!");
+					
+				}
              
 
                

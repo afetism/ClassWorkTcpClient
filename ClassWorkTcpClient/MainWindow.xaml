@@ -11,16 +11,27 @@
             <ColumnDefinition Width="300"></ColumnDefinition>
             <ColumnDefinition ></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <ListView Grid.Column="0">
-            
-            
+        <ListView Grid.Column="0" ItemsSource="{Binding Processes}" SelectedItem="{Binding SelectedProcess, BindingGroupName=Name }"
+            SelectionMode="Single">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Width="50" Header="Id"
+         DisplayMemberBinding="{Binding Id}"  />
+                    <GridViewColumn Width="150" Header="Name"  
+         DisplayMemberBinding="{Binding Name}" />
+                    <GridViewColumn Width="60" Header="Machine"
+         DisplayMemberBinding="{Binding Machine}" />
+                  
+                </GridView>
+            </ListView.View>
         </ListView>
+
 
         <StackPanel Grid.Column="1">
             <Button   Margin="10" Width="100" Height="50" Command="{Binding RefreshCommand}">Refresh</Button>
-            <TextBox  Margin="10" Width="150" Height="30"></TextBox>
-            <ComboBox  Name="comboBox1"  Margin="10" Width="100" Height="50" ItemsSource="{Binding StartandKill}"/>
-            <Button   Margin="10" Width="100" Height="50">Run</Button>
+            <TextBox  Margin="10" Width="150" Height="30" Text="{Binding Content}"></TextBox>
+            <ComboBox  Name="comboBox1"  Margin="10" Width="100" Height="50" ItemsSource="{Binding StartandKill}" SelectedValue="{Binding SelectedType}"/>
+            <Button   Margin="10" Width="100" Height="50" Command="{Binding RunCommand}">Run</Button>
         </StackPanel>
     </Grid>
 </Window>

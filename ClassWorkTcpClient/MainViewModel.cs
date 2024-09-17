@@ -12,12 +12,52 @@ namespace ClassWorkTcpClient;
 public class MainViewModel:INotifyPropertyChanged
 {
 
-    public RelayCommand Run { get; set; }
+    public RelayCommand RunCommand { get; set; }
     public RelayCommand RefreshCommand { get; set; }
+	public string Content { get => content; set
+        {
+            content=value;
+            
+            OnPropertyChanged();
+        }
+    }
+	public MyProcess SelectedProcess
+	{ 
+        get => selectedProcess; 
+        set {
+            selectedProcess=value;
+            if(selectedProcess != null) Content=SelectedProcess.Name;
 
-    private ObservableCollection<string> startandKill;
 
-    public ObservableCollection<string> StartandKill
+			OnPropertyChanged();
+        }
+    }
+	public string SelectedType
+    {
+        get => selectedType;
+        set
+        {
+            selectedType=value;
+            OnPropertyChanged();
+        }
+    }
+
+	private ObservableCollection<string> startandKill;
+	private ObservableCollection<MyProcess> processes;
+	
+	private MyProcess selectedProcess;
+	private string content;
+	private string selectedType;
+
+	public ObservableCollection<MyProcess> Processes { get => processes; set
+        {
+            processes=value;
+            OnPropertyChanged();
+        }
+    }
+
+
+	public ObservableCollection<string> StartandKill
     {
         get => startandKill;
         set
@@ -26,23 +66,71 @@ public class MainViewModel:INotifyPropertyChanged
             OnPropertyChanged();
         }
     }
+
+	readonly TcpClient Client;
     public MainViewModel()
     {
-        StartandKill = new ObservableCollection<string>();
+	    Client=new TcpClient();
+		var ip = IPAddress.Parse("192.168.79.1");
+		var ep = new IPEndPoint(ip, 2701);
+		Client.Connect(ep);
+		StartandKill = new ObservableCollection<string>();
         StartandKill.Add("Start");
         StartandKill.Add("Kill");
         RefreshCommand = new(executeRefresh);
-    }
+        RunCommand=new(executeRun);
 
-    private void executeRefresh(object obj)
+	}
+
+	private void executeRun(object obj)
+	{
+		if(Client.Connected)
+        {
+            Command command;
+            if (SelectedType=="Start")
+            { 
+                command = new Command { Type=SelectedType, Context=Content, };
+
+	
+			}
+            else
+            {
+				
+
+				command = new Command
+                {
+                    Type=SelectedType,
+                    Context=Content,
+                    ProcessId=SelectedProcess.Id
+                };
+             }
+
+
+
+			string jsonString = JsonSerializer.Serialize(command);
+            Byte[] data =System.Text.Encoding.UTF8.GetBytes(jsonString);
+            NetworkStream stream =Client.GetStream();
+            stream.Write(data, 0, data.Length);
+
+			data = new Byte[100000];
+
+            if (SelectedType=="Start")
+            {
+                String responseData = String.Empty;
+                Int32 bytes = stream.Read(data, 0, data.Length);
+                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                SelectedProcess=JsonSerializer.Deserialize<MyProcess>(responseData);
+            }
+		}
+	}
+
+	private void executeRefresh(object obj)
     {
-        using var client = new TcpClient();
-        var ip = IPAddress.Parse("10.1.18.9");
-        var ep = new IPEndPoint(ip, 27001);
+      
         try
         {
-            client.Connect(ep);
-            if(client.Connected)
+            
+            if(Client.Connected)
             {
                 // using (var stream = client.GetStream()) ;
                 var command = new Command { Refresh = true };
@@ -52,7 +140,7 @@ public class MainViewModel:INotifyPropertyChanged
                 
                 string jsonString = JsonSerializer.Serialize(command);
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(jsonString);
-                NetworkStream stream = client.GetStream();
+                NetworkStream stream = Client.GetStream();
                 stream.Write(data, 0, data.Length);
                 //receive data
                 data = new Byte[100000];
@@ -61,12 +149,15 @@ public class MainViewModel:INotifyPropertyChanged
                 String responseData = String.Empty;
                 Int32 bytes = stream.Read(data, 0, data.Length);
                 responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-               
-                  
+                Processes=JsonSerializer.Deserialize<ObservableCollection<MyProcess>>(responseData);
+
+				
 
 
 
-            }
+
+
+			}
         }
         catch (Exception ex)
         {
